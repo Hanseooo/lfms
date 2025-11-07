@@ -1,0 +1,84 @@
+--TRANSACTION!!!!!!
+
+-- Drop existing procedure if it exists
+DROP PROCEDURE IF EXISTS resolve_report_and_log(INTEGER, UUID, UUID);
+
+-- Create new procedure
+CREATE OR REPLACE PROCEDURE resolve_report_and_log(
+    p_report_id INTEGER,
+    p_owner_id UUID,
+    p_claimant_id UUID
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_report_title TEXT;
+    v_owner_name TEXT;
+    v_claimant_name TEXT;
+BEGIN
+    -- Lock the report row for update to prevent concurrent modifications
+    PERFORM 1 FROM reports_report WHERE id = p_report_id FOR UPDATE;
+    
+    -- Get the report title for logging
+    SELECT 
+        CASE
+            WHEN r.type = 'lost' THEN li.item_name
+            WHEN r.type = 'found' THEN fi.item_name
+            ELSE 'Unknown Item'
+        END
+    INTO v_report_title
+    FROM reports_report r
+    LEFT JOIN reports_lostitem li ON li.report_id = r.id
+    LEFT JOIN reports_founditem fi ON fi.report_id = r.id
+    WHERE r.id = p_report_id;
+    
+    -- Update report status to resolved
+    UPDATE reports_report
+    SET status = 'resolved'
+    WHERE id = p_report_id;
+    
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Report with id % not found', p_report_id;
+    END IF;
+    
+    -- Get user names for clarity in the log
+    SELECT CONCAT(first_name, ' ', last_name)
+    INTO v_owner_name
+    FROM auth_user
+    WHERE id = p_owner_id;
+    
+    SELECT CONCAT(first_name, ' ', last_name)
+    INTO v_claimant_name
+    FROM auth_user
+    WHERE id = p_claimant_id;
+    
+    -- Insert a log entry
+    INSERT INTO reports_reportresolutionlog (
+        report_id,
+        resolved_by_id,
+        claimed_by_id,
+        report_title,
+        resolved_by_name,
+        claimed_by_name,
+        date_resolved
+    )
+    VALUES (
+        p_report_id,
+        p_owner_id,
+        p_claimant_id,
+        v_report_title,
+        v_owner_name,
+        v_claimant_name,
+        NOW()
+    );
+    
+    -- Commit the transaction (optional - will auto-commit if no exception)
+    COMMIT;
+    
+EXCEPTION
+    WHEN OTHERS THEN
+        -- Rollback on any failure
+        ROLLBACK;
+        RAISE;
+END;
+$$;

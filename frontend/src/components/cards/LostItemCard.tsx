@@ -13,10 +13,12 @@ import { useAuth } from "@/hooks/useAuth";
 import type { LostReport } from "@/types/apiResponse";
 import { api } from "@/api/axiosInstance";
 import { toast } from "sonner";
+import { ReportActionModal } from "../modals/ReportActionModal";
 
 export default function LostItemCard({ report }: { report: LostReport }) {
   const { user } = useAuth();
   const [commentOpen, setCommentOpen] = useState(false);
+  const [reportActionOpen, setReportActionOpen] = useState(false)
   const { lost_item } = report;
   const isOwner = user?.id === report.reported_by.id;
 
@@ -106,7 +108,7 @@ export default function LostItemCard({ report }: { report: LostReport }) {
           </Button>
 
           {!isOwner && (
-            <Button variant="default" size="sm" className="w-full sm:w-auto">
+            <Button onClick={() => setReportActionOpen(true)} variant="default" size="sm" className="w-full sm:w-auto hover:cursor-pointer">
               <CheckCircle className="mr-2 h-4 w-4" /> Item Found
             </Button>
           )}
@@ -117,6 +119,12 @@ export default function LostItemCard({ report }: { report: LostReport }) {
         open={commentOpen}
         onClose={() => setCommentOpen(false)}
         report={report}
+      />
+      <ReportActionModal
+        open={reportActionOpen}
+        onClose={() => setReportActionOpen(false)}
+        report={report}
+        actionType="found"
       />
     </>
   );

@@ -6,12 +6,16 @@ import cloudinary.uploader
 from .models import Report, LostItem, FoundItem, Comment, Claim, Notification
 from .serializers import *
 from .permissions import IsOwnerOrReadOnly, IsCommentOwnerOrReportOwnerOrReadOnly, IsAdminOrOwnerOrReadOnly
+from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth import get_user_model
 from django_filters.rest_framework import DjangoFilterBackend
 
 from rest_framework import viewsets, permissions, status
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Q
+from django.db import connection
+from rest_framework.decorators import api_view, permission_classes
+
 
 class ReportViewSet(viewsets.ModelViewSet):
     queryset = Report.objects.all().order_by("-date_time")  # Keep this for the router
@@ -81,7 +85,7 @@ class ReportViewSet(viewsets.ModelViewSet):
         report.save(update_fields=["status"])
         return Response({"status": "rejected"}, status=status.HTTP_200_OK)
 
-    @action(detail=True, methods=["post"])
+    @action(detail=True, methods=["post"], permission_classes=[permissions.IsAuthenticated])
     def claim_item(self, request, pk=None):
         report = self.get_object()
         message = request.data.get("message", "")
@@ -97,7 +101,7 @@ class ReportViewSet(viewsets.ModelViewSet):
 
         Notification.objects.create(
             user=report.reported_by,
-            message=f"{request.user.username} wants to claim your found item.",
+            message=f"{request.user.first_name} {request.user.last_name} wants to claim the found item.",
             detailed_message=message,
             related_report=report
         )
@@ -107,7 +111,7 @@ class ReportViewSet(viewsets.ModelViewSet):
             status=status.HTTP_201_CREATED
         )
 
-    @action(detail=True, methods=["post"])
+    @action(detail=True, methods=["post"], permission_classes=[permissions.IsAuthenticated])
     def item_found(self, request, pk=None):
         report = self.get_object()
         message = request.data.get("message", "")
@@ -117,15 +121,34 @@ class ReportViewSet(viewsets.ModelViewSet):
 
         Notification.objects.create(
             user=report.reported_by,
-            message=f"{request.user.username} reported finding your lost item.",
+            message=f"{request.user.first_name} {request.user.last_name} reported finding your lost item.",
             detailed_message=message,
             related_report=report
         )
 
-        report.status = "resolved"
-        report.save(update_fields=["status"])
-
         return Response({"status": "item found notification sent"})
+    
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def resolve_report_view(request, report_id):
+    """
+    Resolve a report using the stored procedure in PostgreSQL.
+    """
+    owner_id = request.user.id
+    claimant_id = request.data.get("claimant_id")
+
+    if not claimant_id:
+        return Response({"error": "Claimant ID is required."}, status=400)
+
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "CALL resolve_report_and_log(%s, %s, %s);",
+                [report_id, str(owner_id), str(claimant_id)]
+            )
+        return Response({"message": "Report successfully resolved and logged."})
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
 
 
 class CommentViewSet(viewsets.ModelViewSet):
@@ -164,5 +187,26 @@ class NotificationViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        # Users should only see their own notifications
-        return Notification.objects.filter(user=self.request.user)
+        return Notification.objects.filter(user=self.request.user).order_by("-created_at")
+
+    def partial_update(self, request, *args, **kwargs):
+        notification = self.get_object()
+        is_read = request.data.get("is_read")
+
+        if is_read is not None:
+            notification.is_read = is_read
+            notification.save(update_fields=["is_read"])
+            return Response(
+                {"status": "Notification marked as read"},
+                status=status.HTTP_200_OK
+            )
+
+        return Response(
+            {"error": "Invalid payload"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    @action(detail=False, methods=["get"], url_path="unread-count")
+    def unread_count(self, request):
+        count = Notification.objects.filter(user=request.user, is_read=False).count()
+        return Response({"unread_count": count})

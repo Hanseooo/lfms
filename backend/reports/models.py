@@ -69,3 +69,19 @@ class Notification(models.Model):
     related_report = models.ForeignKey(Report, on_delete=models.SET_NULL, null=True, blank=True)
     is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+
+class ReportResolutionLog(models.Model):
+    report = models.ForeignKey(Report, on_delete=models.CASCADE, related_name="resolution_logs")
+    resolved_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="resolved_reports"
+    )
+    claimed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="claimed_reports"
+    )
+    receiver_name = models.CharField(max_length=255)
+    giver_name = models.CharField(max_length=255)
+    report_title = models.CharField(max_length=255)
+    date_resolved = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Resolution Log for Report #{self.report.id} - {self.report_title}"

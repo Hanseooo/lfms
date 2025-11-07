@@ -17,10 +17,12 @@ import { useAuth } from "@/hooks/useAuth";
 import type { FoundReport } from "@/types/apiResponse";
 import { api } from "@/api/axiosInstance";
 import { toast } from "sonner";
+import { ReportActionModal } from "../modals/ReportActionModal";
 
 export default function FoundItemCard({ report }: { report: FoundReport }) {
   const { user } = useAuth();
   const [commentOpen, setCommentOpen] = useState(false);
+  const [reportActionOpen, setReportActionOpen] = useState(false);
   const { found_item } = report;
   const isOwner = user?.id === report.reported_by.id;
 
@@ -108,7 +110,7 @@ export default function FoundItemCard({ report }: { report: FoundReport }) {
 
           {/* Hide Claim button if owner */}
           {!isOwner && (
-            <Button variant="default" size="sm" className="w-full sm:w-auto">
+            <Button onClick={() => setReportActionOpen(true)} variant="default" size="sm" className="w-full sm:w-auto hover:cursor-pointer">
               <CheckCircle className="mr-2 h-4 w-4" /> Claim Item
             </Button>
           )}
@@ -120,6 +122,12 @@ export default function FoundItemCard({ report }: { report: FoundReport }) {
         onClose={() => setCommentOpen(false)}
         report={report}
       />
+    <ReportActionModal
+        open={reportActionOpen}
+        onClose={() => setReportActionOpen(false)}
+        report={report}
+        actionType="claim"
+    />
     </>
   );
 }

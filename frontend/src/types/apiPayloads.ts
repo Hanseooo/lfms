@@ -56,4 +56,8 @@ export type UpdateNotificationPayload = {
   is_read?: boolean;
 };
 
+export interface ReportActionPayload {
+  message: string;
+}
+
 
