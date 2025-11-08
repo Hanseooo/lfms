@@ -14,6 +14,7 @@ import { toast } from "sonner";
 export default function HomePage() {
   const [openNotifications, setOpenNotifications] = useState(false);
   const [openLogs, setOpenLogs] = useState(false);
+  const [isNotifOpened, setIsNotifOpened] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
@@ -45,11 +46,14 @@ export default function HomePage() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setOpenNotifications(true)}
+            onClick={() => {
+              setOpenNotifications(true);
+              setIsNotifOpened(true)
+            }}
             className="relative"
           >
             <Bell className="h-5 w-5" />
-            {unreadCount > 0 && (
+            {unreadCount > 0 && !isNotifOpened && (
               <span className="absolute top-1 right-1 flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>

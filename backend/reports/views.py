@@ -152,12 +152,19 @@ def resolve_report_view(request, report_id):
 
 
 class CommentViewSet(viewsets.ModelViewSet):
-    queryset = Comment.objects.all().order_by("-created_at")
     serializer_class = CommentSerializer
     permission_classes = [permissions.IsAuthenticated, IsCommentOwnerOrReportOwnerOrReadOnly]
 
+    def get_queryset(self):
+        report_id = self.request.query_params.get("report")
+        queryset = Comment.objects.select_related("user").order_by("-created_at")
+        if report_id:
+            queryset = queryset.filter(report_id=report_id)
+        return queryset
+
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
 
 class ClaimViewSet(viewsets.ModelViewSet):
     serializer_class = ClaimSerializer

@@ -66,11 +66,37 @@ class SimpleReportSerializer(serializers.ModelSerializer):
 
 class NotificationSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
-    related_report = SimpleReportSerializer(read_only=True)
+    related_report = ReportSerializer(read_only=True)
+    claimed_by = serializers.SerializerMethodField()
 
     class Meta:
         model = Notification
-        fields = "__all__"
+        fields = [
+            "id",
+            "user",
+            "message",
+            "detailed_message",
+            "related_report",
+            "claimed_by",
+            "is_read",
+            "created_at",
+        ]
+
+    def get_claimed_by(self, obj):
+        """Return the latest claimant for this report, if exists."""
+        if not obj.related_report:
+            return None
+
+        claim = Claim.objects.filter(report=obj.related_report).order_by("-date_claimed").first()
+        if claim and claim.claimed_by:
+            return {
+                "id": str(claim.claimed_by.id),
+                "first_name": claim.claimed_by.first_name,
+                "last_name": claim.claimed_by.last_name,
+            }
+        return None
+
+
 
 class UserMiniSerializer(serializers.ModelSerializer):
     """Minimal user info for nested display"""
@@ -84,9 +110,6 @@ class UserMiniSerializer(serializers.ModelSerializer):
         return f"{obj.first_name} {obj.last_name}".strip()
 
 
-# ----------------------------
-# ReportResolutionLog Serializer
-# ----------------------------
 class ReportResolutionLogSerializer(serializers.ModelSerializer):
     report = ReportSerializer(read_only=True)
     resolved_by = UserMiniSerializer(read_only=True)
@@ -106,9 +129,6 @@ class ReportResolutionLogSerializer(serializers.ModelSerializer):
         ]
 
 
-# ----------------------------
-# ActivityLog Serializer
-# ----------------------------
 class ActivityLogSerializer(serializers.ModelSerializer):
     user = UserMiniSerializer(read_only=True)
     notification = NotificationSerializer(read_only=True)

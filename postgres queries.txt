@@ -44,12 +44,12 @@ BEGIN
     -- Get user names for clarity in the log
     SELECT CONCAT(first_name, ' ', last_name)
     INTO v_owner_name
-    FROM auth_user
+    FROM accounts_user
     WHERE id = p_owner_id;
     
     SELECT CONCAT(first_name, ' ', last_name)
     INTO v_claimant_name
-    FROM auth_user
+    FROM accounts_user
     WHERE id = p_claimant_id;
     
     -- Insert a log entry
@@ -105,30 +105,48 @@ $$ LANGUAGE plpgsql;
 --STEP 1
 
 -- Drop and recreate the function safely
-DROP FUNCTION IF EXISTS get_unread_notification_count(UUID);
-
-CREATE OR REPLACE FUNCTION get_unread_notification_count(p_user_id UUID)
-RETURNS INTEGER
-LANGUAGE plpgsql
-AS $$
+CREATE OR REPLACE FUNCTION log_claim_activity()
+RETURNS TRIGGER AS $$
 DECLARE
-    unread_count INTEGER;
+    v_user_full_name TEXT;
 BEGIN
-    SELECT COUNT(*)
-    INTO unread_count
-    FROM reports_notification
-    WHERE user_id = p_user_id
-      AND is_read = FALSE;
+    -- Get full name from your user table
+    SELECT CONCAT(first_name, ' ', last_name)
+    INTO v_user_full_name
+    FROM accounts_user
+    WHERE id = NEW.user_id;
 
-    RETURN unread_count;
+    -- Insert into activity log (map columns correctly)
+    INSERT INTO activity_logs (
+        notification_id,
+        user_id,
+        report_id,
+        action,
+        user_full_name,
+        created_at
+    )
+    VALUES (
+        NEW.id,
+        NEW.user_id,
+        NEW.related_report_id,
+        'notification_created',  
+        v_user_full_name,
+        NOW()
+    );
+
+    RETURN NEW;
 END;
-$$;
+$$ LANGUAGE plpgsql;
+
 
 
 --STEP 2
+
+DROP TRIGGER IF EXISTS trg_log_claim_activity ON reports_notification;
 
 CREATE TRIGGER trg_log_claim_activity
 AFTER INSERT ON reports_notification
 FOR EACH ROW
 EXECUTE FUNCTION log_claim_activity();
+
 

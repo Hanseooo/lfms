@@ -74,9 +74,12 @@ export function CommentModal({ open, onClose, report }: CommentModalProps) {
     }
   };
 
-  useEffect(() => {
-    if (open) fetchComments();
-  }, [open]);
+useEffect(() => {
+  if (open && report?.id) {
+    fetchComments();
+  }
+}, [open, report?.id]);
+
 
   return (
     <Dialog open={open} onOpenChange={onClose}>

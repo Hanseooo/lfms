@@ -4,7 +4,7 @@ from .views import ReportViewSet, CommentViewSet, ClaimViewSet, NotificationView
 
 router = DefaultRouter()
 router.register("reports", ReportViewSet)
-router.register("comments", CommentViewSet)
+router.register("comments", CommentViewSet, basename="comments")
 router.register("notifications", NotificationViewSet)
 router.register("claims", ClaimViewSet, basename="claim")
 router.register(r"resolution-logs", ReportResolutionLogViewSet, basename="resolution-log")
