@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Settings, Edit2 } from "lucide-react";
+import { Settings, Edit2, Loader2 } from "lucide-react";
 import {
   Popover,
   PopoverContent,
@@ -13,17 +13,21 @@ import {
 import SettingsModal from "../modals/SettingsModal";
 import { cn } from "@/lib/utils";
 import { Input } from "../ui/input";
-import { Separator } from "@radix-ui/react-select";
+import { Separator } from "@/components/ui/separator";
+import { toast } from "sonner";
+import { api } from "@/api/axiosInstance";
 import { useAuth } from "@/hooks/useAuth";
 
 export default function UserProfileSection() {
-  const { user } = useAuth(); 
+  const { user, refreshUser } = useAuth(); // ✅ refreshUser should re-fetch from backend
   const [openSettings, setOpenSettings] = useState(false);
   const [openAvatarPicker, setOpenAvatarPicker] = useState(false);
   const [customSeed, setCustomSeed] = useState("");
   const [avatar, setAvatar] = useState(
-    "https://api.dicebear.com/9.x/adventurer/svg?seed=Easton"
+    user?.profile_avatar_url ||
+      "https://api.dicebear.com/9.x/adventurer/svg?seed=Easton"
   );
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (customSeed.trim()) {
@@ -44,6 +48,25 @@ export default function UserProfileSection() {
     "Easton",
     "Avery",
   ].map((seed) => `https://api.dicebear.com/9.x/adventurer/svg?seed=${seed}`);
+
+  const handleSaveAvatar = async () => {
+    if (!user) return;
+    setSaving(true);
+    try {
+      await api.patch(`/accounts/users/${user.id}/`, {
+        profile_avatar_url: avatar,
+      });
+
+      toast.success("Avatar updated successfully!");
+      await refreshUser(); // ✅ refresh global user context
+      setOpenAvatarPicker(false);
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to update avatar");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <>
@@ -88,7 +111,7 @@ export default function UserProfileSection() {
               className={cn(
                 "bg-linear-to-b from-neutral-100 to-neutral-200 dark:from-neutral-800 dark:to-neutral-900",
                 "p-6 rounded-2xl border-2 border-accent shadow-xl backdrop-blur-md",
-                "flex flex-col gap-4 w-[300px] max-w-[80vw]"
+                "flex flex-col gap-4 w-[320px] max-w-[90vw]"
               )}
             >
               <div className="flex flex-wrap justify-center gap-4">
@@ -112,7 +135,7 @@ export default function UserProfileSection() {
                 ))}
               </div>
 
-              <Separator />
+              <Separator className="my-2" />
 
               <Input
                 value={customSeed}
@@ -120,21 +143,23 @@ export default function UserProfileSection() {
                 onChange={(e) => setCustomSeed(e.target.value)}
               />
 
-              {/* ✅ New Save button */}
               <Button
                 variant="default"
+                disabled={saving}
                 className="w-full bg-linear-to-r from-[#800000] via-[#b22222] to-[#800000] text-white hover:opacity-90 transition rounded-lg"
-                onClick={() => {
-                  console.log("Save clicked — no functionality yet");
-                  setOpenAvatarPicker(false);
-                }}
+                onClick={handleSaveAvatar}
               >
-                Save
+                {saving ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving...
+                  </>
+                ) : (
+                  "Save"
+                )}
               </Button>
             </PopoverContent>
           </Popover>
 
-          {/* User Info */}
           <div>
             <CardTitle className="text-xl font-semibold text-gradient-maroon">
               {user?.first_name} {user?.last_name}
