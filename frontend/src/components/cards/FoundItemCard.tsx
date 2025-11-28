@@ -38,7 +38,7 @@ export default function FoundItemCard({ report }: { report: FoundReport }) {
 
   return (
     <>
-      <Card className="w-full max-w-lg mx-auto my-4 border bg-card shadow-sm rounded-xl">
+      <Card className="w-full max-w-4xl mx-auto my-4 border bg-card shadow-sm rounded-xl">
         {/* Header */}
         <CardHeader className="flex flex-row items-center gap-3 pb-2">
           <Avatar>

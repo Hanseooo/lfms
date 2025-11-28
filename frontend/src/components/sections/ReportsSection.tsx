@@ -44,7 +44,7 @@ useEffect(() => {
   }, [bottomRef, hasMore, loading, fetchReports]);
 
   return (
-    <section className="w-full max-w-7xl mx-auto p-4">
+    <section className="w-full max-w-7xl mx-auto p-4 min-w-xs">
       <h2 className="text-2xl font-bold mb-4 text-foreground">Reports</h2>
 
       <FiltersBar
