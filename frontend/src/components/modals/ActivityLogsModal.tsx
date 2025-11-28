@@ -43,26 +43,25 @@ export function ActivityLogsModal({ open, onClose }: ActivityLogsModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl h-[80vh] flex flex-col dark:bg-neutral-950 bg-background">
-        <DialogHeader>
-          <DialogTitle className="text-lg font-semibold text-center">
+      <DialogContent className="max-w-3xl w-full h-[80vh] flex flex-col dark:bg-neutral-950 bg-background rounded-lg p-4">
+        <DialogHeader className="pb-4">
+          <DialogTitle className="text-xl font-semibold text-center">
             Activity Logs
           </DialogTitle>
         </DialogHeader>
 
-        {/* LOADING STATE */}
         {loading ? (
           <div className="flex-1 flex items-center justify-center">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
           </div>
         ) : (
-          <ScrollArea className="h-[70vh] pr-2">
+          <ScrollArea className="flex-1 pr-2">
             {logs.length === 0 ? (
-              <p className="text-center text-muted-foreground py-4">
+              <p className="text-center text-muted-foreground py-6">
                 No activity logs found.
               </p>
             ) : (
-              <ul className="space-y-3">
+              <ul className="space-y-4">
                 {logs.map((log) => {
                   const report = log.report;
                   const reportTitle =
@@ -75,57 +74,52 @@ export function ActivityLogsModal({ open, onClose }: ActivityLogsModalProps) {
                       key={log.id}
                       className="border bg-foreground/5 dark:border-neutral-800 shadow-sm hover:shadow-md transition-all duration-200"
                     >
-                      <CardHeader className="pb-2 flex flex-col gap-2">
-                        <div className="flex items-center justify-between flex-wrap">
-                          <CardTitle className="text-base font-semibold flex items-center gap-2">
-                            <ClipboardList className="h-4 w-4 text-primary" />
-                            {log.action}
-                          </CardTitle>
-
-                          {log.role && (
-                            <Badge
-                              variant="outline"
-                              className="bg-primary/10 border-primary/20 text-primary"
-                            >
-                              {log.role}
-                            </Badge>
-                          )}
-                        </div>
+                      <CardHeader className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 pb-1">
+                        <CardTitle className="flex items-center gap-2 text-base font-semibold">
+                          <ClipboardList className="h-4 w-4 text-primary" />
+                          {log.action}
+                        </CardTitle>
+                        {log.role && (
+                          <Badge
+                            variant="outline"
+                            className="bg-primary/10 border-primary/20 text-primary text-sm px-2 py-1"
+                          >
+                            {log.role}
+                          </Badge>
+                        )}
                       </CardHeader>
 
-                      <CardContent className="space-y-3 text-sm text-muted-foreground">
-                        {/* GRID FOR USER + REPORT */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2">
-                          <p className="flex items-center gap-2">
-                            <UserRound className="h-4 w-4" />
-                            <span className="text-foreground font-medium">
-                              User:
-                            </span>{" "}
-                            {log.user.full_name}
-                          </p>
-
-                          {report && (
-                            <p className="flex items-center gap-2">
-                              <ClipboardList className="h-4 w-4" />
-                              <span className="text-foreground font-medium">
-                                Report:
-                              </span>{" "}
-                              {reportTitle}
-                            </p>
-                          )}
+                      <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-2">
+                          <UserRound className="h-4 w-4" />
+                          <span className="font-medium text-foreground">
+                            User:
+                          </span>
+                          <span>{log.user.full_name}</span>
                         </div>
 
-                        <Separator className="my-1" />
+                        {report && (
+                          <div className="flex items-center gap-2">
+                            <ClipboardList className="h-4 w-4" />
+                            <span className="font-medium text-foreground">
+                              Report:
+                            </span>
+                            <span>{reportTitle}</span>
+                          </div>
+                        )}
 
-                        {/* DATE */}
-                        <p className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 sm:col-span-2">
                           <CalendarDays className="h-4 w-4" />
-                          <span className="text-foreground font-medium">
+                          <span className="font-medium text-foreground">
                             Date:
-                          </span>{" "}
-                          {new Date(log.created_at).toLocaleString()}
-                        </p>
+                          </span>
+                          <span>
+                            {new Date(log.created_at).toLocaleString()}
+                          </span>
+                        </div>
                       </CardContent>
+
+                      <Separator className="my-1" />
                     </Card>
                   );
                 })}

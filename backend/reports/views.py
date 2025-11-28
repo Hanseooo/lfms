@@ -20,7 +20,7 @@ from rest_framework import status as http_status
 import psycopg2
 from django.conf import settings
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
-
+from reports.models import ActivityLog
 
 
 class ReportViewSet(viewsets.ModelViewSet):
@@ -106,6 +106,12 @@ class ReportViewSet(viewsets.ModelViewSet):
         report.status = "approved"
         report.save(update_fields=["status"])
         return Response({"status": "approved"}, status=status.HTTP_200_OK)
+        ActivityLog.objects.create(
+                    user=request.user,
+                    role=request.user.user_type,
+                    report=report,
+                    action=f"{request.user.username} (admin) approved report ID {report.id}"
+                )
 
     @action(detail=True, methods=["patch"], permission_classes=[permissions.IsAdminUser])
     def reject(self, request, pk=None):
@@ -113,6 +119,12 @@ class ReportViewSet(viewsets.ModelViewSet):
         report.status = "rejected"
         report.save(update_fields=["status"])
         return Response({"status": "rejected"}, status=status.HTTP_200_OK)
+        ActivityLog.objects.create(
+                user=request.user,
+                role=request.user.user_type,
+                report=report,
+                action=f"{request.user.username} (admin) rejected report ID {report.id}"
+            )
 
     @action(detail=True, methods=["post"], permission_classes=[permissions.IsAuthenticated])
     def claim_item(self, request, pk=None):
@@ -242,8 +254,8 @@ class ClaimViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        # Admins see all claims, others only their own
-        if user.is_staff:
+
+        if user.user_type == "admin":
             return Claim.objects.all().order_by("-date_claimed")
         return Claim.objects.filter(claimed_by=user).order_by("-date_claimed")
 
@@ -267,7 +279,7 @@ class NotificationViewSet(viewsets.ModelViewSet):
         return Notification.objects.filter(user=self.request.user).order_by("-created_at")
 
     def partial_update(self, request, *args, **kwargs):
-        notification = self.get_object()
+        notification = self.get_object
         is_read = request.data.get("is_read")
 
         if is_read is not None:
@@ -304,7 +316,7 @@ class ReportResolutionLogViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class ActivityLogViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = ActivityLog.objects.select_related("user", "report", "notification").order_by("-created_at")
+    queryset = ActivityLog.objects.select_related("user", "report",).order_by("-created_at")
     serializer_class = ActivityLogSerializer
     permission_classes = [permissions.IsAuthenticated]
 

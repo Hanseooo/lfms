@@ -82,7 +82,7 @@ export function ModifyUserModal({ open, onClose }: ModifyUserModalProps) {
   ) => {
     try {
       await axios.patch(
-        `/accounts/users/${userId}/`,
+        `${API_BASE_URL}/accounts/users/${userId}/`,
         { user_type: role },
         { headers: { Authorization: `Token ${token}` } }
       );
