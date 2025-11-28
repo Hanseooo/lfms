@@ -26,9 +26,9 @@ dist-ssr
 .qodo
 
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
+backend/*.pyc
+backend/*.pyo
+backend/*.pyd
 
 
 .env
