@@ -44,10 +44,10 @@ export default function App() {
             }
           </Route>
 
-          <Route
+          {/* <Route
             path="*"
             element={<Navigate to={user ? "/home" : "/"} replace />}
-          />
+          /> */}
         </Routes>
       </div>
     </Router>
