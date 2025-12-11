@@ -36,7 +36,7 @@ SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["https://hcdc-lfms-production.up.railway.app",]
+ALLOWED_HOSTS = ["http://hcdc-lfms-production.up.railway.app",]
 
 
 # Application definition
@@ -119,7 +119,7 @@ REST_FRAMEWORK = {
 
 CORS_ALLOWED_ORIGINS =[
     "http://localhost:5173",
-    "hcdc-lfms-production.up.railway.app",
+    "http://hcdc-lfms-production.up.railway.app",
 
 ]
 
