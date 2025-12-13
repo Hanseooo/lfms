@@ -16,7 +16,6 @@ import { Button } from "@/components/ui/button";
 import { api } from "@/api/axiosInstance";
 import { toast } from "sonner";
 import type { ActivityLog, ActivityLogResponse } from "@/types/apiResponse";
-import { API_BASE_URL } from "@/api/apiConfig";
 
 interface ActivityLogsModalProps {
   open: boolean;
